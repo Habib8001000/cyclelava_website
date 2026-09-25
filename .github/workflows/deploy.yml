@@ -1,0 +1,31 @@
+name: Deploy Cyclelava to Hostinger
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  web-deploy:
+    name: 🎉 Sync to Hostinger via FTP/SFTP
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 📂 Sync files to Hostinger public_html
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: public_html/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            PROJECT_PLAN.md
+            README.md

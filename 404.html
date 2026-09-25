@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found | Cyclelava</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script>
+    // Redirect to home if accessed with path on GitHub Pages
+    const path = window.location.pathname;
+    if (path && path !== '/' && !path.endsWith('404.html')) {
+      window.location.replace('/' + (window.location.search || ''));
+    }
+  </script>
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem;">
+  <div class="glass-card" style="max-width: 500px; padding: 3rem;">
+    <h1 style="font-size: 4rem; color: var(--lava-orange); margin-bottom: 0.5rem;">404</h1>
+    <h2 style="margin-bottom: 1rem;">Trail Not Found</h2>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">
+      Looks like you've ridden off the main track. Head back to the Cyclelava hub.
+    </p>
+    <a href="index.html" class="btn btn-primary">Return to Homepage</a>
+  </div>
+</body>
+</html>
