@@ -339,3 +339,107 @@ body.menu-open .m-bar { display: none; }
 .footer-logo { display: inline-block; }
 .footer-logo img { width: 170px; height: auto; border-radius: 22px; }
 @media (max-width: 860px) { .logo img { height: 32px; } .footer-logo img { width: 140px; } }
+
+/* =====================================================================
+   BRAND THEME v2 — black / orange / white (matches the CycleLava logo)
+   ===================================================================== */
+:root {
+  --bg: #f6f6f3;
+  --bg-soft: #ecece7;
+  --ink: #0e0e0e;
+  --ink-soft: #55565a;
+  --line: #e0e0da;
+  --forest: #0e0e0e;
+  --forest-2: #1b1b1b;
+  --accent: #ff6a00;
+  --accent-ink: #d95500;
+  --font-head: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+}
+body { background: var(--bg); }
+.site-header { background: rgba(255,255,255,.92); border-bottom: 1px solid var(--line); }
+.logo img { height: 44px; border-radius: 0; }
+.nav { height: 76px; }
+.nav-links a:hover, .nav-links a[aria-current="page"] { border-color: var(--accent); }
+.btn-primary { box-shadow: 0 8px 22px -8px rgba(255,106,0,.7); }
+.btn-primary:hover { background: #ff7f26; }
+.card .icon { background: var(--ink); color: var(--accent); }
+.checklist li::before { background-color: var(--accent); }
+.section-dark .eyebrow, .ride-card .day { color: var(--accent); }
+.eyebrow { color: var(--accent-ink); }
+.badge-soon, .card .icon { }
+.badge-soon { background: #fff0e3; }
+.contact-list .icon { background: var(--ink); color: var(--accent); }
+.cta-band { background: var(--ink); position: relative; overflow: hidden; }
+.cta-band::before, .hero-dark::before, .page-head::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 58%, rgba(255,106,0,.9) 58%, rgba(255,106,0,.9) 59.2%, transparent 59.2%),
+    linear-gradient(115deg, transparent 61%, rgba(255,106,0,.55) 61%, rgba(255,106,0,.55) 61.8%, transparent 61.8%),
+    linear-gradient(115deg, transparent 63.5%, rgba(255,106,0,.3) 63.5%, rgba(255,106,0,.3) 64%, transparent 64%);
+}
+.cta-band > * { position: relative; }
+.cta-band .btn-dark { background: var(--accent); }
+.cta-band .btn-dark:hover { background: #ff7f26; }
+
+/* dark hero */
+.hero-dark { position: relative; overflow: hidden; background: #0b0b0b; color: #fff; padding: clamp(3rem, 7vw, 6rem) 0 clamp(3.5rem, 8vw, 7rem); }
+.hero-dark::after { content: ""; position: absolute; right: -10%; top: -30%; width: 60vw; height: 60vw; background: radial-gradient(closest-side, rgba(255,106,0,.22), transparent); pointer-events: none; }
+.hero-dark .container { position: relative; z-index: 1; }
+.hero-dark h1 { color: #fff; }
+.hero-dark .lead { color: #c9c9c9; }
+.hero-dark .eyebrow { color: var(--accent); }
+.hero-dark .hero-meta { border-color: rgba(255,255,255,.15); color: #b5b5b5; }
+.hero-dark .hero-meta strong { color: #fff; }
+.hero-dark .photo-card img { box-shadow: 18px 18px 0 var(--accent); border-radius: 24px; }
+.hero-dark .photo-card.tilt img { transform: none; }
+.hero-dark .photo-tag { background: #fff; color: var(--ink); left: -18px; }
+
+/* marquee band */
+.marquee { background: var(--accent); color: #0e0e0e; overflow: hidden; white-space: nowrap; border-block: 2px solid #0e0e0e; }
+.marquee-track { display: inline-flex; animation: scrollx 32s linear infinite; padding: .85rem 0; }
+.marquee-track span { font: 800 1.05rem var(--font-head); letter-spacing: .06em; text-transform: uppercase; padding: 0 1.6rem; position: relative; }
+.marquee-track span::after { content: "✦"; position: absolute; right: -.45rem; font-size: .8em; }
+@keyframes scrollx { to { transform: translateX(-50%); } }
+
+/* numbered service cards */
+.card { border-radius: 22px; position: relative; overflow: hidden; }
+.card:hover { border-color: var(--accent); }
+.card .num { position: absolute; right: 1.2rem; top: .6rem; font: 800 3.4rem/1 var(--font-head); color: rgba(14,14,14,.06); }
+
+/* dark page heads on inner pages */
+.page-head { position: relative; overflow: hidden; background: #0b0b0b; color: #fff; padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(2.5rem, 5vw, 4rem); }
+.page-head > .container { position: relative; z-index: 1; }
+.page-head h1 { color: #fff; }
+.page-head .lead { color: #c9c9c9; }
+.page-head .eyebrow { color: var(--accent); }
+.page-head .crumbs, .page-head .crumbs a { color: #a8a8a8; }
+.page-head .btn-ghost { border-color: rgba(255,255,255,.5); color: #fff; }
+.page-head .badge-soon { background: rgba(255,106,0,.15); color: #ffae73; }
+.page-head .phone { box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 30px 60px -20px rgba(0,0,0,.6); }
+
+/* footer */
+.site-footer { background: #0b0b0b; }
+.footer-logo img { width: 210px; border-radius: 0; }
+.site-footer h4 { color: var(--accent); }
+
+/* rides */
+.ride-card { background: #161616; border-color: rgba(255,255,255,.08); border-radius: 24px; }
+.ride-card:hover { border-color: var(--accent); }
+.ride-card .ghost-num { color: rgba(255,106,0,.1); }
+
+/* phone mockup in brand colours */
+.phone-screen { background: linear-gradient(180deg, #1b1b1b, #0b0b0b); }
+.phone-cta { background: var(--accent); color: #0e0e0e; }
+
+@media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
+@media (max-width: 860px) {
+  .logo img { height: 36px; }
+  .nav { height: 64px; }
+  .hero-dark .photo-card img { box-shadow: 10px 10px 0 var(--accent); }
+  .hero-dark .photo-tag { left: 8px; }
+  .hero-dark::before, .page-head::before { opacity: .55; }
+  .footer-logo img { width: 170px; }
+  .marquee-track span { font-size: .9rem; }
+  .site-header.nav-open { background: #fff; }
+}
+@media (max-width: 860px) { .m-bar { background: rgba(28,28,28,.96); border: 1px solid rgba(255,255,255,.12); } }
