@@ -1,26 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Page Not Found | Cyclelava</title>
-  <link rel="stylesheet" href="assets/css/style.css">
-  <script>
-    // Redirect to home if accessed with path on GitHub Pages
-    const path = window.location.pathname;
-    if (path && path !== '/' && !path.endsWith('404.html')) {
-      window.location.replace('/' + (window.location.search || ''));
-    }
-  </script>
-</head>
-<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 2rem;">
-  <div class="glass-card" style="max-width: 500px; padding: 3rem;">
-    <h1 style="font-size: 4rem; color: var(--lava-orange); margin-bottom: 0.5rem;">404</h1>
-    <h2 style="margin-bottom: 1rem;">Trail Not Found</h2>
-    <p style="color: var(--text-muted); margin-bottom: 2rem;">
-      Looks like you've ridden off the main track. Head back to the Cyclelava hub.
-    </p>
-    <a href="index.html" class="btn btn-primary">Return to Homepage</a>
-  </div>
-</body>
-</html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page not found | Cyclelava</title><meta name="robots" content="noindex"><link rel="icon" type="image/png" href="/assets/images/favicon.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/css/style.css"></head>
+<body><main class="container" style="min-height:100vh;display:grid;place-content:center;text-align:center;gap:1rem">
+<a class="logo" href="/" style="justify-self:center"><img src="/assets/images/logo-wordmark.webp" width="580" height="90" alt="CycleLava" style="height:48px"></a>
+<h1 style="font-size:clamp(4rem,14vw,9rem);color:var(--accent);margin:0">404</h1>
+<p class="lead" style="margin-inline:auto">Looks like you took a wrong turn. Let's get you back on the road.</p>
+<div class="btn-row" style="justify-content:center"><a class="btn btn-dark" href="/">Back to home</a><a class="btn btn-ghost" href="/events/">See the rides</a></div>
+</main></body></html>
