@@ -93,4 +93,69 @@
 
   var rentDate = document.querySelector('#rent-form [name="date"]');
   if (rentDate) { rentDate.min = new Date().toISOString().split('T')[0]; }
+
+  /* Hero bike stage: gentle 3D tilt on mouse move (desktop only) */
+  var heroSection = document.getElementById('top');
+  var bikeStage = document.getElementById('heroBikeStage');
+  if (heroSection && bikeStage && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+    heroSection.addEventListener('mousemove', function (e) {
+      var rect = heroSection.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      bikeStage.style.transform = 'perspective(900px) rotateY(' + (x * 8).toFixed(2) + 'deg) rotateX(' + (-y * 8).toFixed(2) + 'deg)';
+    });
+    heroSection.addEventListener('mouseleave', function () {
+      bikeStage.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg)';
+    });
+  }
+
+  /* Bike hotspots tap / click interaction */
+  var hotspots = document.querySelectorAll('.bike-hotspot');
+  if (hotspots.length) {
+    hotspots.forEach(function (spot) {
+      var btn = spot.querySelector('.hotspot-trigger');
+      if (!btn) return;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var wasActive = spot.classList.contains('active');
+        hotspots.forEach(function (s) { s.classList.remove('active'); });
+        if (!wasActive) spot.classList.add('active');
+      });
+    });
+    document.addEventListener('click', function () {
+      hotspots.forEach(function (s) { s.classList.remove('active'); });
+    });
+  }
+
+  /* Animated stats counter in hero */
+  var statStrip = document.querySelector('.hero-stats-strip');
+  var statAnimated = false;
+  if (statStrip && 'IntersectionObserver' in window) {
+    var statObserver = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting && !statAnimated) {
+        statAnimated = true;
+        document.querySelectorAll('.stat-number[data-target]').forEach(function (el) {
+          var target = parseInt(el.getAttribute('data-target'), 10);
+          var suffix = el.getAttribute('data-suffix') || '';
+          var duration = 1500;
+          var startTime = performance.now();
+          function updateCounter(now) {
+            var elapsed = now - startTime;
+            var progress = Math.min(elapsed / duration, 1);
+            var ease = 1 - Math.pow(1 - progress, 3);
+            var current = Math.floor(ease * target);
+            el.innerHTML = current + '<em>' + suffix + '</em>';
+            if (progress < 1) {
+              requestAnimationFrame(updateCounter);
+            } else {
+              el.innerHTML = target + '<em>' + suffix + '</em>';
+            }
+          }
+          requestAnimationFrame(updateCounter);
+        });
+        statObserver.disconnect();
+      }
+    }, { threshold: 0.15 });
+    statObserver.observe(statStrip);
+  }
 })();
