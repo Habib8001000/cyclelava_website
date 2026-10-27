@@ -45,22 +45,6 @@
     items.forEach(function (el) { el.classList.add('in'); });
   }
 
-  /* Next Friday / Sunday dates */
-  function nextWeekday(target) {
-    var d = new Date();
-    d.setHours(0, 0, 0, 0);
-    var diff = (target - d.getDay() + 7) % 7;
-    d.setDate(d.getDate() + diff);
-    return d;
-  }
-  var fmt = { weekday: 'long', day: 'numeric', month: 'long' };
-  document.querySelectorAll('[data-next]').forEach(function (el) {
-    var day = el.getAttribute('data-next') === 'friday' ? 5 : 0;
-    var d = nextWeekday(day);
-    var today = new Date().getDay() === day;
-    el.textContent = today ? 'Today, ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : d.toLocaleDateString('en-GB', fmt);
-  });
-
   /* Footer year */
   document.querySelectorAll('[data-year]').forEach(function (el) { el.textContent = new Date().getFullYear(); });
 
