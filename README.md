@@ -8,7 +8,7 @@ Static HTML/CSS/JS. No build step. Deployed to GitHub Pages on every push to `ma
 `/` Home · `/about/` · `/events/` (rides) · `/rentals/` · `/shop/` · `/app/` (coming soon) · `/contact/`
 
 ## Details to keep in sync
-- WhatsApp / phone: `+92 300 1294738` (`wa.me/923028001000`), also set in `assets/js/main.js`
+- WhatsApp / phone: `+92 300 1294738` (`wa.me/923001294738`), also set in `assets/js/main.js`
 - Instagram: `@cyclelava`
 - SEO: per-page title/description/canonical/Open Graph, JSON-LD (BikeStore, Person, FAQ, Breadcrumb), `sitemap.xml`, `robots.txt`
 
