@@ -16,11 +16,27 @@
   var money = function (n) { return CUR + ' ' + Number(n).toLocaleString('en-PK', { maximumFractionDigits: 0 }); };
   var safeUrl = function (u) { return /^https?:\/\//i.test(u || '') ? u : ''; };
 
+  // Images are stored on the portal. If the API returns a relative path ("/images/shop/x.png"),
+  // point it at the portal's origin, otherwise the browser would look for it on cyclelava.com.
+  var ORIGIN = API.replace(/\/api\/.*$/, '');
+  function fixImg(u) { return typeof u === 'string' && u.charAt(0) === '/' && u.charAt(1) !== '/' ? ORIGIN + u : u; }
+  function fixImages(o) {
+    if (Array.isArray(o)) { o.forEach(fixImages); return o; }
+    if (o && typeof o === 'object') {
+      Object.keys(o).forEach(function (k) {
+        if (k === 'imageUrl') o[k] = fixImg(o[k]);
+        else if (k === 'images' && Array.isArray(o[k])) o[k] = o[k].map(fixImg);
+        else fixImages(o[k]);
+      });
+    }
+    return o;
+  }
+
   function get(path, opts) {
     return fetch(API + path, opts).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
-    });
+    }).then(fixImages);
   }
 
   var ICON_CART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a2 2 0 002 1.6h7.7a2 2 0 002-1.5L20.5 8H6"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>';
