@@ -6,7 +6,6 @@
   var API = 'https://hikencyc.runasp.net/api/public/events'; // live Hikencyc portal
   var ORIGIN = API.replace(/\/api\/.*$/, '');
   var WA_NUMBER = '923001294738';                            // keep in sync with main.js
-  var STORE_KEY = 'cyclelava_bookings_v1';
   var MAX_RIDERS = 50;
   var MAX_PROOF_BYTES = 5 * 1024 * 1024;
 
@@ -62,21 +61,10 @@
     return eventsPromise;
   }
 
-  /* ---------------- Saved bookings (this device only) ---------------- */
-  var Store = {
-    read: function () {
-      try { var v = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
-    },
-    add: function (b) {
-      var list = Store.read().filter(function (x) { return x.token !== b.token; });
-      list.unshift(b);
-      try { localStorage.setItem(STORE_KEY, JSON.stringify(list.slice(0, 20))); } catch (e) {}
-    },
-    remove: function (token) {
-      try { localStorage.setItem(STORE_KEY, JSON.stringify(Store.read().filter(function (x) { return x.token !== token; }))); } catch (e) {}
-    }
-  };
-
+  /* Nothing about a booking is kept in the browser: there is no sign-in, so a list of "your bookings" would be
+     visible to anyone who uses the same device. A booking is reached only through its private link (shown after
+     booking) and the ticket email. Earlier versions did store a list; remove it. */
+  try { localStorage.removeItem('cyclelava_bookings_v1'); } catch (e) {}
   /* ---------------- Event cards ---------------- */
   function priceChips(ev) {
     if (ev.isFree) return '<span class="ev-chip free">Free to join</span>';
@@ -231,7 +219,6 @@
     state = null;
     // drop ?book= / ?booking= so a refresh does not reopen the sheet
     if (/[?&](book|booking)=/.test(location.search)) history.replaceState(null, '', location.pathname);
-    renderMyBookings();
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
@@ -309,7 +296,7 @@
         '<div class="field"><label for="bk-name">Full name</label><input id="bk-name" name="name" autocomplete="name" maxlength="100" placeholder="e.g. Ali Ahmed" value="' + esc(state.name) + '" required></div>' +
         '<div class="field"><label for="bk-phone">Phone number</label><input id="bk-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="03001234567" value="' + esc(state.phone) + '" required>' +
           '<span class="bk-hint" id="bk-phone-hint" hidden>Enter a Pakistani mobile number, e.g. 03001234567 or +923001234567.</span></div>' +
-        '<div class="field"><label for="bk-email">Email <small>(optional)</small></label><input id="bk-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="256" placeholder="you@example.com" value="' + esc(state.email) + '">' +
+        '<div class="field"><label for="bk-email">Email</label><input id="bk-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="256" placeholder="you@example.com" value="' + esc(state.email) + '" required>' +
           '<span class="bk-note">Your PDF ticket is emailed here once the booking is approved.</span></div>' +
 
         '<span class="bk-label">Who is riding?</span>' +
@@ -321,7 +308,7 @@
         '<div class="bk-pay" id="bk-pay"></div>' +
         '<div class="bk-error" id="bk-error" role="alert" hidden></div>' +
         '<button class="btn btn-primary bk-submit" type="submit"></button>' +
-        '<p class="form-note">No account needed. The organizers review your booking and your ticket appears on this device once it is approved.</p>' +
+        '<p class="form-note">No account needed. The organizers review your booking and your ticket is emailed to you once it is approved.</p>' +
       '</form>';
 
     renderPay();
@@ -425,7 +412,7 @@
     state.name = name; state.phone = phone; state.email = email;
     var t = total();
     showError('');
-    if (email && !validEmail(email)) return showError('Please enter a valid email address, or leave it empty.');
+    if (!validEmail(email)) return showError('Please enter a valid email address. Your ticket is sent there.');
     if (name.length < 2) return showError('Please enter your full name.');
     if (!validPhone(phone)) { $('#bk-phone-hint', body).hidden = false; return showError('Please enter a valid Pakistani mobile number.'); }
     if (state.ev.soldOut) return showError('This event is fully booked.');
@@ -439,7 +426,6 @@
       body: JSON.stringify({ eventId: ev.id, name: name, phoneNumber: phone, email: email, numberOfCycles: state.cycles, membersWithOwnCycle: state.own,
         paymentProofBase64: t > 0 ? state.proof : '' })
     }).then(function (res) {
-      Store.add({ token: res.token, ref: res.reference, title: ev.title, date: ev.dateFormatted });
       state = null;
       showStatus(res.token, true);
       loadEvents(true); renderGrids(); fillReserve(); // places left have changed
@@ -466,7 +452,6 @@
     message('<div class="bk-spin"></div><p>Checking your booking…</p>');
     api('/booking/' + encodeURIComponent(token)).then(function (b) {
       if (!sheet.classList.contains('open')) return;
-      Store.add({ token: token, ref: b.reference, title: b.eventTitle, date: b.eventDate, status: b.status });
 
       var riders = '';
       if (b.numberOfCycles > 0) riders += '<div><dt>Rental cycles</dt><dd>' + b.numberOfCycles + '</dd></div>';
@@ -500,46 +485,16 @@
       }
 
       body.innerHTML = '<div class="bk-status">' + top + details + '<div class="bk-actions">' + actions + '</div>' +
-        '<div class="bk-keep"><strong>Keep this link</strong><p>This booking is saved on this device. To open it elsewhere, use your private link:</p>' +
+        '<div class="bk-keep"><strong>Keep this link</strong><p>Save this private link to check your booking and open your ticket later. Do not share it.</p>' +
         '<div class="bk-linkrow"><input readonly value="' + esc(statusLink(token)) + '" aria-label="Booking link"><button type="button" class="bk-copy" data-copy="' + esc(statusLink(token)) + '">Copy</button></div></div></div>';
     }).catch(function (err) {
       if (!sheet.classList.contains('open')) return;
       if (err.status === 404) {
-        Store.remove(token);
         message('<h4>Booking not found</h4><p>This booking link is not valid any more.</p><button class="btn btn-dark" type="button" data-book-event>See open events</button>');
       } else {
         message('<h4>Could not check your booking</h4><p>Please check your connection and try again.</p><button class="btn btn-dark" type="button" data-status="' + esc(token) + '">Try again</button>');
       }
     });
-  }
-
-  /* ---------------- "Your bookings" strip ---------------- */
-  function renderMyBookings() {
-    var box = $('[data-my-bookings]');
-    if (!box) return;
-    var list = Store.read();
-    box.hidden = !list.length;
-    if (!list.length) return;
-    var cls = { Approved: 'ok', Rejected: 'no', Pending: 'wait' };
-    var label = { Approved: 'Confirmed', Rejected: 'Not approved', Pending: 'Pending review' };
-    $('[data-my-list]', box).innerHTML = list.map(function (b) {
-      var s = b.status || 'Pending';
-      return '<button class="my-bk" type="button" data-status="' + esc(b.token) + '"><span><strong>' + esc(b.title || 'Event booking') + '</strong>' +
-        '<small>' + esc(b.date || '') + (b.ref ? ' · #' + esc(b.ref) : '') + '</small></span>' +
-        '<span class="bk-badge ' + (cls[s] || 'wait') + '" data-badge="' + esc(b.token) + '">' + (label[s] || s) + '</span></button>';
-    }).join('');
-  }
-
-  function refreshMyBookings() {
-    var box = $('[data-my-bookings]');
-    if (!box) return;
-    var pending = Store.read().filter(function (b) { return (b.status || 'Pending') === 'Pending'; }).slice(0, 5);
-    if (!pending.length) return;
-    Promise.all(pending.map(function (b) {
-      return api('/booking/' + encodeURIComponent(b.token)).then(function (r) {
-        Store.add({ token: b.token, ref: r.reference, title: r.eventTitle, date: r.eventDate, status: r.status });
-      }).catch(function (e) { if (e.status === 404) Store.remove(b.token); });
-    })).then(renderMyBookings);
   }
 
   /* ---------------- Events (delegated) ---------------- */
@@ -606,8 +561,6 @@
   mountSheet();
   renderGrids();
   fillReserve();
-  renderMyBookings();
-  refreshMyBookings();
 
   var qs = new URLSearchParams(location.search);
   if (qs.get('booking')) showStatus(qs.get('booking'));

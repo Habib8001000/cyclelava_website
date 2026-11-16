@@ -13,7 +13,7 @@ Static HTML/CSS/JS. No build step. Deployed to GitHub Pages on every push to `ma
 - SEO: per-page title/description/canonical/Open Graph, JSON-LD (BikeStore, Person, FAQ, Breadcrumb), `sitemap.xml`, `robots.txt`
 
 ## Event booking
-`/events/` and the home hero (blinking "Reserve your slot" card, shown only while an event is open for booking) list upcoming events and take bookings without an account, through the Hikencyc portal's public API (`/api/public/events`, URL set at the top of `assets/js/events.js`). A booking lands in the portal under Admin > Pending Invoices (source "web"); once approved, the visitor's QR ticket shows on the site via their private link (`/events/?booking=<token>`, also remembered in the browser).
+`/events/` and the home hero (blinking "Reserve your slot" card, shown only while an event is open for booking) list upcoming events and take bookings without an account, through the Hikencyc portal's public API (`/api/public/events`, URL set at the top of `assets/js/events.js`). A booking lands in the portal under Admin > Pending Invoices (source "web"); once approved, the visitor's QR ticket shows on the site via their private link (`/events/?booking=<token>`) and is emailed to them as a PDF. Nothing about a booking is stored in the browser.
 
 ## Local preview
 ```
