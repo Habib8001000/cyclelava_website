@@ -242,7 +242,7 @@
       }
       // opened without a specific event: start on the first one that still has places
       var open = list.filter(function (e) { return !e.soldOut; })[0];
-      state = { events: list, ev: ev || open || list[0], cycles: 0, own: 1, proof: '', proofName: '', busy: false, name: '', phone: '', email: '' };
+      state = { events: list, ev: ev || open || list[0], cycles: 0, own: 0, proof: '', proofName: '', busy: false, name: '', phone: '', email: '' };
       renderForm();
     }).catch(function () {
       if (!sheet.classList.contains('open')) return;
@@ -278,7 +278,6 @@
     // keep the selection inside this event's limits (it may have been made for another event)
     state.cycles = Math.min(state.cycles, maxFor('cycles'));
     state.own = Math.min(state.own, maxFor('own'));
-    if (riders() === 0 && maxFor('own') === 0 && maxFor('cycles') > 0) state.cycles = 1; // only rental places are left
     var picker = state.events.length > 1
       ? '<div class="field"><label for="bk-event">Event</label><select id="bk-event">' + state.events.map(function (e) {
           return '<option value="' + e.id + '"' + (e.id === ev.id ? ' selected' : '') + '>' + esc(e.title) + ' — ' + esc(e.dateFormatted) + (e.soldOut ? ' (fully booked)' : '') + '</option>';
