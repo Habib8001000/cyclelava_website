@@ -150,19 +150,46 @@
     });
   }
 
-  /* ---------------- Hero toggle: show the next event under it ---------------- */
-  function fillNextEvent() {
-    var slots = $$('[data-next-event]');
-    if (!slots.length) return;
-    loadEvents().then(function (list) {
-      if (!list.length) return;
-      slots.forEach(function (s) { s.textContent = 'Next: ' + list[0].title + ' · ' + list[0].dateFormatted; });
-    }).catch(function () {});
+  /* ---------------- Hero "Reserve your slot" toggle ---------------- */
+  var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function dayName(ev) {
+    // weekday straight from the date part of the portal's timestamp, so the visitor's timezone cannot shift it
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ev.eventDate || '');
+    return m ? DAYS[new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay()] : '';
   }
 
+  /* Shows the next event that still has places. With no such event the toggle stays hidden and the hero
+     looks exactly as it does without it; it appears by itself once an event is listed in the portal. */
+  function fillReserve() {
+    var btn = $('[data-hero-reserve]');
+    if (!btn) return;
+    var grid = btn.closest('.hero-grid');
+    var hide = function () { btn.hidden = true; if (grid) grid.classList.remove('has-reserve'); };
+    loadEvents().then(function (list) {
+      var open = list.filter(function (e) { return !e.soldOut; });
+      var ev = open[0];
+      if (!ev) return hide();
+      var d = dateParts(ev), day = dayName(ev);
+      var when = d ? (day ? day + ', ' : '') + d.day + ' ' + d.mon + ' · ' + d.time : ev.dateFormatted;
+      btn.setAttribute('data-book-event', ev.id);
+      btn.setAttribute('aria-label', 'Reserve your slot for ' + ev.title + ', ' + when);
+      btn.innerHTML =
+        '<span class="hr-top"><span class="hr-live"><span class="hr-dot"></span>Reserve your slot</span><span class="hr-switch" aria-hidden="true"></span></span>' +
+        '<span class="hr-main">' +
+          (d ? '<span class="hr-date"><strong>' + esc(d.day) + '</strong><span>' + esc(d.mon) + '</span></span>' : '') +
+          '<span class="hr-info"><strong class="hr-title">' + esc(ev.title) + '</strong>' +
+            '<span class="hr-line">' + ICON.cal + '<span>' + esc(when) + '</span></span>' +
+            '<span class="hr-line">' + ICON.pin + '<span>' + esc(ev.location) + '</span></span></span>' +
+        '</span>' +
+        '<span class="hr-foot"><span class="ev-chips">' + priceChips(ev) + availChips(ev) + '</span>' +
+          '<span class="hr-cta">' + (open.length > 1 ? 'Book · +' + (open.length - 1) + ' more' : 'Book now') + ' ' + ICON.arrow + '</span></span>';
+      btn.hidden = false;
+      if (grid) grid.classList.add('has-reserve');
+    }).catch(hide);
+  }
   /* ---------------- Booking sheet ---------------- */
   var sheet, overlay, body, titleEl, lastFocus = null;
-  var state = null; // { events, ev, male, female, cycles (rental), proof, proofName, busy, name, phone }
+  var state = null; // { events, ev, cycles (rental), own, proof, proofName, busy, name, phone, email }
 
   function mountSheet() {
     var wrap = document.createElement('div');
@@ -180,7 +207,7 @@
   }
 
   function setToggles(open) {
-    $$('.hero-book').forEach(function (b) { b.setAttribute('aria-expanded', open ? 'true' : 'false'); });
+    $$('.hero-reserve').forEach(function (b) { b.setAttribute('aria-expanded', open ? 'true' : 'false'); });
   }
 
   function openSheet(title) {
@@ -228,7 +255,7 @@
       }
       // opened without a specific event: start on the first one that still has places
       var open = list.filter(function (e) { return !e.soldOut; })[0];
-      state = { events: list, ev: ev || open || list[0], male: 0, female: 0, cycles: 0, proof: '', proofName: '', busy: false, name: '', phone: '', email: '' };
+      state = { events: list, ev: ev || open || list[0], cycles: 0, own: 1, proof: '', proofName: '', busy: false, name: '', phone: '', email: '' };
       renderForm();
     }).catch(function () {
       if (!sheet.classList.contains('open')) return;
@@ -237,39 +264,20 @@
     });
   }
 
-  function riders() { return state.male + state.female; }
-  function ownCount() { return riders() - state.cycles; }
+  function riders() { return state.cycles + state.own; }
   function total() {
     var ev = state.ev;
     return ev.registrationFee * riders() + ev.pricePerCycle * state.cycles;
   }
   var cap = function (v) { return v == null ? MAX_RIDERS : v; };
 
-  /* Highest value each stepper may reach under the event's limits. */
+  /* Highest value each stepper may reach under the event's limits (rental cycles, own-cycle places, total spots). */
   function maxFor(key) {
-    var ev = state.ev;
-    if (key === 'male') return Math.max(0, Math.min(cap(ev.malesLeft), Math.min(MAX_RIDERS, cap(ev.spotsLeft)) - state.female));
-    if (key === 'female') return Math.max(0, Math.min(cap(ev.femalesLeft), Math.min(MAX_RIDERS, cap(ev.spotsLeft)) - state.male));
-    return rentalOffered(ev) ? Math.min(riders(), cap(ev.rentalCyclesLeft)) : 0;
-  }
-  /* Rental cycles must stay between "everyone who cannot bring their own" and what is left to rent. */
-  function clampCycles() {
-    var ev = state.ev, min = ev.ownCyclesLeft == null ? 0 : Math.max(0, riders() - ev.ownCyclesLeft);
-    state.cycles = Math.max(Math.min(min, maxFor('cycles')), Math.min(state.cycles, maxFor('cycles')));
-  }
-  /* Why the current selection cannot be booked, or '' when it can. */
-  function limitProblem() {
-    var ev = state.ev;
-    if (ev.soldOut) return 'This event is fully booked.';
-    if (ev.ownCyclesLeft != null && ownCount() > ev.ownCyclesLeft) {
-      return ev.ownCyclesLeft === 0
-        ? 'There are no places left for riders bringing their own cycle' + (rentalOffered(ev) && ev.rentalCyclesLeft !== 0 ? '. Only riders taking a rental cycle can still book.' : '.')
-        : 'Only ' + ev.ownCyclesLeft + ' place' + (ev.ownCyclesLeft === 1 ? '' : 's') + ' left for riders bringing their own cycle.';
-    }
-    return '';
+    var ev = state.ev, spots = Math.min(MAX_RIDERS, cap(ev.spotsLeft));
+    if (key === 'cycles') return rentalOffered(ev) ? Math.max(0, Math.min(cap(ev.rentalCyclesLeft), spots - state.own)) : 0;
+    return Math.max(0, Math.min(cap(ev.ownCyclesLeft), spots - state.cycles));
   }
   function leftHint(text, left) { return left == null ? text : text + ' · ' + left + ' left'; }
-
   function stepper(key, label, hint, value) {
     return '<div class="bk-step"><div><span class="bk-step-l">' + label + '</span><span class="bk-step-h">' + hint + '</span></div>' +
       '<div class="bk-qty"><button type="button" data-step="' + key + '" data-d="-1" aria-label="Fewer: ' + label + '">&minus;</button>' +
@@ -280,10 +288,10 @@
   function renderForm() {
     var ev = state.ev, img = imgUrl(ev.imageUrl);
     var rental = rentalOffered(ev);
-    state.male = Math.min(state.male, maxFor('male'));
-    state.female = Math.min(state.female, maxFor('female'));
-    clampCycles();
-
+    // keep the selection inside this event's limits (it may have been made for another event)
+    state.cycles = Math.min(state.cycles, maxFor('cycles'));
+    state.own = Math.min(state.own, maxFor('own'));
+    if (riders() === 0 && maxFor('own') === 0 && maxFor('cycles') > 0) state.cycles = 1; // only rental places are left
     var picker = state.events.length > 1
       ? '<div class="field"><label for="bk-event">Event</label><select id="bk-event">' + state.events.map(function (e) {
           return '<option value="' + e.id + '"' + (e.id === ev.id ? ' selected' : '') + '>' + esc(e.title) + ' — ' + esc(e.dateFormatted) + (e.soldOut ? ' (fully booked)' : '') + '</option>';
@@ -306,12 +314,10 @@
 
         '<span class="bk-label">Who is riding?</span>' +
         '<div class="bk-steps">' +
-          stepper('male', 'Male riders', leftHint('Men and boys', ev.malesLeft), state.male) +
-          stepper('female', 'Female riders', leftHint('Women and girls', ev.femalesLeft), state.female) +
-          (rental ? stepper('cycles', 'Rental cycles needed', leftHint('Riders who need a cycle from us', ev.rentalCyclesLeft), state.cycles) : '') +
-          '<p class="bk-own" id="bk-own"></p>' +
+          (rental ? stepper('cycles', 'Rental cycles', leftHint('Riders who need a cycle from us', ev.rentalCyclesLeft), state.cycles) : '') +
+          stepper('own', 'Riders with own cycle', leftHint('Bringing their own cycle', ev.ownCyclesLeft), state.own) +
+          '<p class="bk-own" id="bk-sum"></p>' +
         '</div>' +
-
         '<div class="bk-pay" id="bk-pay"></div>' +
         '<div class="bk-error" id="bk-error" role="alert" hidden></div>' +
         '<button class="btn btn-primary bk-submit" type="submit"></button>' +
@@ -327,24 +333,20 @@
     var pay = $('#bk-pay', body), btn = $('.bk-submit', body);
     if (!pay) return;
 
-    // steppers: current values, which buttons can still move, and the own-cycle summary line
-    ['male', 'female', 'cycles'].forEach(function (k) {
+    // steppers: current values, which buttons can still move, and the summary line
+    ['cycles', 'own'].forEach(function (k) {
       var out = $('#bk-' + k, body); if (!out) return;
       out.textContent = state[k];
-      var min = 0;
-      if (k === 'cycles' && ev.ownCyclesLeft != null) min = Math.min(maxFor('cycles'), Math.max(0, n - ev.ownCyclesLeft));
-      $('[data-step="' + k + '"][data-d="-1"]', body).disabled = state[k] <= min;
+      $('[data-step="' + k + '"][data-d="-1"]', body).disabled = state[k] <= 0;
       $('[data-step="' + k + '"][data-d="1"]', body).disabled = state[k] >= maxFor(k);
     });
-    var own = $('#bk-own', body);
-    if (own) {
-      var problem = n > 0 ? limitProblem() : (ev.soldOut ? limitProblem() : '');
-      own.className = 'bk-own' + (problem ? ' bad' : '');
-      own.textContent = problem || (n === 0 ? 'Add at least one rider.'
-        : n + (n === 1 ? ' rider' : ' riders') + (rentalOffered(ev) ? ': ' + state.cycles + ' on a rental cycle, ' + ownCount() + ' with own cycle.' : ', bringing their own cycle.') +
-          (ev.ownCyclesLeft != null ? ' ' + ev.ownCyclesLeft + ' own-cycle place' + (ev.ownCyclesLeft === 1 ? '' : 's') + ' left.' : ''));
+    var sum = $('#bk-sum', body);
+    if (sum) {
+      sum.className = 'bk-own' + (ev.soldOut ? ' bad' : '');
+      sum.textContent = ev.soldOut ? 'This event is fully booked.'
+        : n === 0 ? 'Add at least one rider.'
+        : n + (n === 1 ? ' rider' : ' riders') + ' in total' + (ev.spotsLeft != null ? ' · ' + ev.spotsLeft + (ev.spotsLeft === 1 ? ' spot' : ' spots') + ' left for this event.' : '.');
     }
-
     if (t > 0) {
       var rows = '';
       if (ev.bankName) rows += '<div><dt>Bank / wallet</dt><dd>' + esc(ev.bankName) + '</dd></div>';
@@ -426,21 +428,21 @@
     if (email && !validEmail(email)) return showError('Please enter a valid email address, or leave it empty.');
     if (name.length < 2) return showError('Please enter your full name.');
     if (!validPhone(phone)) { $('#bk-phone-hint', body).hidden = false; return showError('Please enter a valid Pakistani mobile number.'); }
-    if (riders() <= 0) return showError('Please add at least one rider (male or female).');
-    if (limitProblem()) return showError(limitProblem());
+    if (state.ev.soldOut) return showError('This event is fully booked.');
+    if (riders() <= 0) return showError('Please add at least one rider.');
     if (t > 0 && !state.proof) return showError('Please upload a screenshot of your payment.');
 
     var ev = state.ev;
     state.busy = true; renderPay();
     api('/book', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventId: ev.id, name: name, phoneNumber: phone, email: email, numberOfCycles: state.cycles, membersWithOwnCycle: ownCount(),
-        maleCount: state.male, femaleCount: state.female, paymentProofBase64: t > 0 ? state.proof : '' })
+      body: JSON.stringify({ eventId: ev.id, name: name, phoneNumber: phone, email: email, numberOfCycles: state.cycles, membersWithOwnCycle: state.own,
+        paymentProofBase64: t > 0 ? state.proof : '' })
     }).then(function (res) {
       Store.add({ token: res.token, ref: res.reference, title: ev.title, date: ev.dateFormatted });
       state = null;
       showStatus(res.token, true);
-      loadEvents(true); renderGrids(); // places left have changed
+      loadEvents(true); renderGrids(); fillReserve(); // places left have changed
     }).catch(function (err) {
       if (!state) return;
       state.busy = false;
@@ -469,7 +471,7 @@
       var riders = '';
       if (b.numberOfCycles > 0) riders += '<div><dt>Rental cycles</dt><dd>' + b.numberOfCycles + '</dd></div>';
       if (b.membersWithOwnCycle > 0) riders += '<div><dt>Own cycle</dt><dd>' + b.membersWithOwnCycle + '</dd></div>';
-      if (b.maleCount + b.femaleCount > 0) riders = '<div><dt>Riders</dt><dd>' + b.maleCount + ' male, ' + b.femaleCount + ' female</dd></div>' + riders;
+
       var details = '<dl class="bk-dl"><div><dt>Event</dt><dd>' + esc(b.eventTitle) + '</dd></div><div><dt>When</dt><dd>' + esc(b.eventDate) + '</dd></div>' +
         '<div><dt>Where</dt><dd>' + esc(b.eventLocation) + '</dd></div><div><dt>Name</dt><dd>' + esc(b.name) + '</dd></div>' + riders +
         '<div><dt>' + (b.status === 'Approved' ? 'Paid' : 'Amount') + '</dt><dd>' + (b.amountPaid > 0 ? money(b.amountPaid) : 'Free') + '</dd></div>' +
@@ -560,13 +562,12 @@
     else if (t.hasAttribute('data-step') && state) {
       var k = t.getAttribute('data-step');
       state[k] = Math.max(0, Math.min(maxFor(k), state[k] + (+t.getAttribute('data-d'))));
-      clampCycles();
       keepInputs();
       renderPay();
     }
     else if (t.hasAttribute('data-copy')) { copy(t.getAttribute('data-copy'), t); }
     else if (t.hasAttribute('data-print')) { window.print(); } // print styles show only the open sheet
-    else if (t.hasAttribute('data-events-retry')) { loadEvents(true); renderGrids(); fillNextEvent(); }
+    else if (t.hasAttribute('data-events-retry')) { loadEvents(true); renderGrids(); fillReserve(); }
   });
 
   document.addEventListener('change', function (e) {
@@ -604,7 +605,7 @@
   /* ---------------- boot ---------------- */
   mountSheet();
   renderGrids();
-  fillNextEvent();
+  fillReserve();
   renderMyBookings();
   refreshMyBookings();
 
