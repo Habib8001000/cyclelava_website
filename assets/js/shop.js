@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  var API = 'https://hikencyc.runasp.net/api/public/shop'; // live Hikencyc portal
+  var API = 'https://portal.hikencyc.com/api/public/shop'; // live Hikencyc portal
   var WA_NUMBER = '923001294738';                            // keep in sync with main.js
   var CUR = 'Rs.';
   var CART_KEY = 'cyclelava_cart_v1';

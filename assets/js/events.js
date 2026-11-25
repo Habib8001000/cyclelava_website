@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  var API = 'https://hikencyc.runasp.net/api/public/events'; // live Hikencyc portal
+  var API = 'https://portal.hikencyc.com/api/public/events'; // live Hikencyc portal
   var ORIGIN = API.replace(/\/api\/.*$/, '');
   var WA_NUMBER = '923001294738';                            // keep in sync with main.js
   var MAX_RIDERS = 50;
